@@ -25,6 +25,8 @@ def print_banner():
 {Style.RESET_ALL}"""
     print(banner)
 
+from services.utils import get_mac_address, hide_console
+
 def setup():
     print(f"{Fore.YELLOW}[SETUP] Initializing YouX Local Brain...{Style.RESET_ALL}")
     
@@ -37,6 +39,8 @@ def setup():
             except:
                 pass
 
+    mac = get_mac_address()
+
     # Loop until verified
     while True:
         # Ask for Activation Token
@@ -45,13 +49,16 @@ def setup():
         # Verify Token with Web API
         print(f"{Fore.YELLOW}[SETUP] Verifying identity...{Style.RESET_ALL}")
         try:
-            resp = requests.post(f"{API_BASE_URL}/api/youx/verify", json={"token": token})
+            resp = requests.post(f"{API_BASE_URL}/api/youx/verify", json={
+                "token": token,
+                "macAddress": mac
+            })
             if resp.status_code == 200:
                 data = resp.json()
                 print(f"{Fore.GREEN}✓ Identity Verified: {data['user']['fullName']} ({data['tenant']['name']}){Style.RESET_ALL}")
                 break
             else:
-                print(f"{Fore.RED}✗ Invalid Token. Please check your dashboard and try again.{Style.RESET_ALL}")
+                print(f"{Fore.RED}✗ {resp.json().get('error', 'Invalid Token')}{Style.RESET_ALL}")
         except Exception as e:
             print(f"{Fore.RED}✗ Connection Error: {e}{Style.RESET_ALL}")
             print(f"{Fore.YELLOW}Retrying in 5 seconds...{Style.RESET_ALL}")
@@ -93,8 +100,26 @@ def main_loop(config):
     print(f"{Fore.GREEN}[SYSTEM] YouX Agent is now active and listening...{Style.RESET_ALL}")
     logger.log("YouX Local Agent is now online and connected.", "success")
     
+    last_heartbeat = 0
+    is_enabled = True
+
     while True:
         try:
+            # Heartbeat check every 10 seconds
+            if time.time() - last_heartbeat > 10:
+                try:
+                    resp = requests.get(f"{API_BASE_URL}/api/youx/status?token={config['token']}", timeout=5)
+                    if resp.status_code == 200:
+                        status_data = resp.json()
+                        is_enabled = status_data.get("isEnabled", True)
+                    last_heartbeat = time.time()
+                except:
+                    pass
+
+            if not is_enabled:
+                time.sleep(5) # Deep sleep when disabled
+                continue
+
             # Step 1: Listen for voice input
             query = voice.listen()
             
@@ -154,4 +179,9 @@ def main_loop(config):
 if __name__ == "__main__":
     print_banner()
     config = setup()
+    
+    # Hide console and run in background after successful setup
+    if "--no-hide" not in sys.argv:
+        hide_console()
+        
     main_loop(config)
