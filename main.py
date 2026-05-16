@@ -128,6 +128,18 @@ def main_loop(config):
                     url = payload.get("url")
                     if executor.open_url(url):
                         logger.log(f"Opened URL in browser: {url}", "info")
+                elif intent == "GOOGLE_SEARCH":
+                    q = payload.get("query")
+                    if executor.google_search(q):
+                        logger.log(f"Searching Google for: {q}", "info")
+                elif intent == "YOUTUBE_SEARCH":
+                    q = payload.get("query")
+                    if executor.youtube_search(q):
+                        logger.log(f"Searching YouTube for: {q}", "info")
+                elif intent == "PLAY_MUSIC":
+                    q = payload.get("query")
+                    if executor.play_on_youtube(q):
+                        logger.log(f"Playing on YouTube: {q}", "success")
 
                 # Step 4: Speak Response
                 asyncio.run(voice.speak(spoken_response))

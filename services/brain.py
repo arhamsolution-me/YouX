@@ -14,7 +14,15 @@ class BrainService:
         - CLOSE_APP (payload: {app_name: str})
         - SYSTEM_CONTROL (payload: {action: "mute" | "volume up" | "volume down" | "lock"})
         - OPEN_URL (payload: {url: str})
+        - GOOGLE_SEARCH (payload: {query: str})
+        - YOUTUBE_SEARCH (payload: {query: str})
+        - PLAY_MUSIC (payload: {query: str})
         - CHAT (payload: {answer: str})
+        
+        GUIDELINES:
+        - If user asks to "search for X on Google" or "Google X", use GOOGLE_SEARCH.
+        - If user asks to "search for X on YouTube", use YOUTUBE_SEARCH.
+        - If user asks to "play X" or "play X on YouTube", use PLAY_MUSIC.
         
         RESPONSE FORMAT:
         Return ONLY a JSON object:

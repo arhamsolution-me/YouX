@@ -1,9 +1,8 @@
-groq
 requests
 colorama
-edge-tts
 SpeechRecognition
-PyAudio
-pygame
-AppOpener
+edge-tts
+groq
 keyboard
+pywhatkit
+PyAudio
