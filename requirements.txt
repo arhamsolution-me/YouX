@@ -8,3 +8,5 @@ pywhatkit
 PyAudio
 pyautogui
 psutil
+winshell
+pywin32

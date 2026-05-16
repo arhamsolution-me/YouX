@@ -1,54 +1,58 @@
 import json
+import os
 from groq import Groq
+from services.memory import MemoryService
 
 class BrainService:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key):
         self.client = Groq(api_key=api_key)
-        self.system_prompt = """
-        You are YouX, the powerful local system agent for the Easyx brand. 
-        You control the user's computer via the YouX Local Brain.
-        Your goal is to parse user intent and return a JSON response.
+        self.memory = MemoryService()
+        self.model = "llama-3.3-70b-versatile"
+
+    def process_query(self, query):
+        # Get context from local memory
+        history = self.memory.get_recent_history(limit=5)
         
-        SUPPORTED INTENTS:
-        - OPEN_APP (payload: {app_name: str})
-        - CLOSE_APP (payload: {app_name: str})
-        - SYSTEM_CONTROL (payload: {action: "mute" | "volume up" | "volume down" | "lock" | "screenshot" | "recycle" | "battery"})
-        - OPEN_URL (payload: {url: str})
-        - GOOGLE_SEARCH (payload: {query: str})
-        - YOUTUBE_SEARCH (payload: {query: str})
-        - PLAY_MUSIC (payload: {query: str})
-        - CHAT (payload: {answer: str})
+        # Build contextual prompt
+        system_prompt = """
+        You are YouX, an advanced AI Assistant powered by Easyx. 
+        You control the user's computer based on their voice commands.
         
-        GUIDELINES:
-        - If user asks to "search for X on Google" or "Google X", use GOOGLE_SEARCH.
-        - If user asks to "search for X on YouTube", use YOUTUBE_SEARCH.
-        - If user asks to "play X" or "play X on YouTube", use PLAY_MUSIC.
-        - For system actions like screenshot, battery, volume, or locking, use SYSTEM_CONTROL.
+        Analyze the query and history, then return ONLY a JSON object with:
+        - intent: (OPEN_APP, CLOSE_APP, SEARCH_WEB, SYSTEM_CONTROL, MUSIC_CONTROL, CHAT, SCREENSHOT, RECYCLE_BIN, BATTERY_STATUS, SHUTDOWN_AGENT)
+        - payload: dict containing needed data (e.g., app_name, search_query, action)
+        - spoken_response: what to say to the user
+        - confidence: (0.0 to 1.0) - How sure you are about this intent.
         
-        RESPONSE FORMAT:
-        Return ONLY a JSON object:
-        {
-            "intent": "INTENT_NAME",
-            "payload": { ... },
-            "spoken_response": "What you will say to the user"
-        }
+        Example: {"intent": "OPEN_APP", "payload": {"app_name": "chrome"}, "spoken_response": "Opening Chrome for you.", "confidence": 0.95}
         """
 
-    def process_query(self, query: str):
+        messages = [{"role": "system", "content": system_prompt}]
+        for h in history:
+            messages.append({"role": h["role"], "content": h["content"]})
+        
+        messages.append({"role": "user", "content": query})
+
         try:
-            completion = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": query}
-                ],
+            chat_completion = self.client.chat.completions.create(
+                messages=messages,
+                model=self.model,
                 response_format={"type": "json_object"}
             )
-            return json.loads(completion.choices[0].message.content)
+            
+            response_json = json.loads(chat_completion.choices[0].message.content)
+            
+            # Save user query and AI response to memory
+            self.memory.add_chat("user", query)
+            self.memory.add_chat("assistant", response_json.get("spoken_response", ""))
+            
+            return response_json
         except Exception as e:
-            print(f"[BRAIN] Error: {e}")
+            print(f"[BRAIN ERROR] {e}")
+            # Basic fallback
             return {
-                "intent": "CHAT",
-                "payload": {"answer": "I'm having trouble thinking right now."},
-                "spoken_response": "Sorry, I encountered an error in my brain."
+                "intent": "CHAT", 
+                "payload": {}, 
+                "spoken_response": "I'm having trouble thinking right now. Please try again.",
+                "confidence": 0.1
             }
