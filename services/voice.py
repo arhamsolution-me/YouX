@@ -9,7 +9,11 @@ class VoiceService:
     def __init__(self, voice="en-US-AriaNeural"):
         self.voice = voice
         self.recognizer = sr.Recognizer()
+        self.recognizer.energy_threshold = 300
+        self.recognizer.dynamic_energy_threshold = True
+        self.recognizer.pause_threshold = 0.8
         pygame.mixer.init()
+        self._setup_done = False
 
     async def speak(self, text: str):
         print(f"[VOICE] YouX: {text}")
@@ -28,18 +32,23 @@ class VoiceService:
 
     def listen(self):
         with sr.Microphone() as source:
-            print("[VOICE] Listening...")
-            self.recognizer.adjust_for_ambient_noise(source, duration=1)
-            audio = self.recognizer.listen(source)
+            if not self._setup_done:
+                print("[VOICE] Calibrating microphone...")
+                self.recognizer.adjust_for_ambient_noise(source, duration=1)
+                self._setup_done = True
             
+            print("[VOICE] Listening...")
             try:
+                audio = self.recognizer.listen(source, timeout=10, phrase_time_limit=15)
                 text = self.recognizer.recognize_google(audio)
                 print(f"[VOICE] You: {text}")
                 return text
+            except sr.WaitTimeoutError:
+                return None
             except sr.UnknownValueError:
                 return None
             except sr.RequestError as e:
-                print(f"[VOICE] Could not request results: {e}")
+                print(f"[VOICE] Error: {e}")
                 return None
 
     def play_wake_sound(self):
