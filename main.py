@@ -43,6 +43,9 @@ def setup():
 
     # Loop until verified
     while True:
+        # Ask for Master Key (New Security Layer)
+        master_key = input(f"{Fore.MAGENTA}❯ Enter Master Access Key: {Style.RESET_ALL}").strip()
+        
         # Ask for Activation Token
         token = input(f"{Fore.CYAN}❯ Enter Activation Token from TitanX Dashboard: {Style.RESET_ALL}").strip()
         
@@ -51,14 +54,15 @@ def setup():
         try:
             resp = requests.post(f"{API_BASE_URL}/api/youx/verify", json={
                 "token": token,
-                "macAddress": mac
+                "macAddress": mac,
+                "masterKey": master_key
             })
             if resp.status_code == 200:
                 data = resp.json()
                 print(f"{Fore.GREEN}✓ Identity Verified: {data['user']['fullName']} ({data['tenant']['name']}){Style.RESET_ALL}")
                 break
             else:
-                print(f"{Fore.RED}✗ {resp.json().get('error', 'Invalid Token')}{Style.RESET_ALL}")
+                print(f"{Fore.RED}✗ {resp.json().get('error', 'Verification Failed')}{Style.RESET_ALL}")
         except Exception as e:
             print(f"{Fore.RED}✗ Connection Error: {e}{Style.RESET_ALL}")
             print(f"{Fore.YELLOW}Retrying in 5 seconds...{Style.RESET_ALL}")
