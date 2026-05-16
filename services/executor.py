@@ -75,6 +75,10 @@ class SystemExecutor:
     def control_system(self, action: str) -> bool:
         try:
             import keyboard
+            import os
+            import pyautogui
+            import psutil
+            
             action = action.lower()
             if "mute" in action:
                 keyboard.press_and_release("volume mute")
@@ -84,6 +88,18 @@ class SystemExecutor:
                 keyboard.press_and_release("volume down")
             elif "lock" in action:
                 os.system("rundll32.exe user32.dll,LockWorkStation")
+            elif "screenshot" in action:
+                os.makedirs("screenshots", exist_ok=True)
+                path = f"screenshots/screenshot_{int(time.time())}.png"
+                pyautogui.screenshot(path)
+                return f"Screenshot saved at {path}"
+            elif "recycle" in action or "clean bin" in action:
+                os.system("rd /s /q %systemdrive%\\$Recycle.Bin")
+                return "Recycle bin emptied."
+            elif "battery" in action:
+                battery = psutil.sensors_battery()
+                return f"Your battery is at {battery.percent}%"
+            
             return True
         except Exception as e:
             print(f"[EXECUTOR] Error controlling system: {e}")

@@ -21,6 +21,7 @@ def print_banner():
      |_|\___/ \__,_| /_/ \_\ 
                             
 {Fore.WHITE}   YOUX LOCAL AGENT v{VERSION}
+{Fore.BLUE}   (Powered by Easyx)
 {Fore.BLUE}   =========================
 {Style.RESET_ALL}"""
     print(banner)
@@ -43,19 +44,15 @@ def setup():
 
     # Loop until verified
     while True:
-        # Ask for Master Key (New Security Layer)
-        master_key = input(f"{Fore.MAGENTA}❯ Enter Master Access Key: {Style.RESET_ALL}").strip()
-        
         # Ask for Activation Token
-        token = input(f"{Fore.CYAN}❯ Enter Activation Token from TitanX Dashboard: {Style.RESET_ALL}").strip()
+        token = input(f"{Fore.CYAN}❯ Enter Activation Token from Easyx Dashboard: {Style.RESET_ALL}").strip()
         
         # Verify Token with Web API
         print(f"{Fore.YELLOW}[SETUP] Verifying identity...{Style.RESET_ALL}")
         try:
             resp = requests.post(f"{API_BASE_URL}/api/youx/verify", json={
                 "token": token,
-                "macAddress": mac,
-                "masterKey": master_key
+                "macAddress": mac
             })
             if resp.status_code == 200:
                 data = resp.json()

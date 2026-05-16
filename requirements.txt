@@ -6,3 +6,5 @@ groq
 keyboard
 pywhatkit
 PyAudio
+pyautogui
+psutil
