@@ -90,7 +90,7 @@ class SystemExecutor:
                 os.system("rundll32.exe user32.dll,LockWorkStation")
             elif "screenshot" in action:
                 os.makedirs("screenshots", exist_ok=True)
-                path = f"screenshots/screenshot_{int(time.time())}.png"
+                path = f"screenshots/screenshot.png"
                 pyautogui.screenshot(path)
                 return f"Screenshot saved at {path}"
             elif "recycle" in action or "clean bin" in action:
