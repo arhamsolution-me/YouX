@@ -48,18 +48,24 @@ async def main():
     
     config = load_config()
     
-    if not config:
+    if not config or "groq_key" not in config:
         print(f"{Fore.YELLOW}[SETUP] Welcome to YouX!{Style.RESET_ALL}")
-        token = input(f"{Fore.WHITE}Please enter your Activation Token from Easyx Dashboard: {Style.RESET_ALL}")
-        config = {"token": token}
+        if not config:
+            token = input(f"{Fore.WHITE}Please enter your Activation Token from Easyx Dashboard: {Style.RESET_ALL}")
+            config = {"token": token}
+        
+        if "groq_key" not in config:
+            groq_key = input(f"{Fore.WHITE}Please enter your Groq API Key: {Style.RESET_ALL}")
+            config["groq_key"] = groq_key
+
         save_config(config)
         # Enable auto-startup on first setup
         utils.set_startup(True)
-        print(f"{Fore.GREEN}[SYSTEM] Added to Windows Startup.{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}[SYSTEM] Setup complete and added to Windows Startup.{Style.RESET_ALL}")
 
     # Initialize Services
     voice = VoiceService()
-    brain = BrainService(api_key="gsk_REDACTED_FOR_SECURITY") # Use environment variable in prod
+    brain = BrainService(api_key=config.get("groq_key"))
     executor = CommandExecutor()
     logger = RemoteLogger(config["token"])
 
