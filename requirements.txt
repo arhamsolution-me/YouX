@@ -1,0 +1,9 @@
+groq
+requests
+colorama
+edge-tts
+SpeechRecognition
+PyAudio
+pygame
+AppOpener
+keyboard
