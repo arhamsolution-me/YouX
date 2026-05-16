@@ -71,13 +71,16 @@ import asyncio
 from services.voice import VoiceService
 from services.brain import BrainService
 from services.executor import SystemExecutor
+from services.logger import CloudLogger
 
 def main_loop(config):
     voice = VoiceService()
     brain = BrainService(config["groq_api_key"])
     executor = SystemExecutor()
+    logger = CloudLogger(API_BASE_URL, config["token"])
 
     print(f"{Fore.GREEN}[SYSTEM] YouX Agent is now active and listening...{Style.RESET_ALL}")
+    logger.log("YouX Local Agent is now online and connected.", "success")
     
     while True:
         try:
@@ -85,6 +88,8 @@ def main_loop(config):
             query = voice.listen()
             
             if query:
+                logger.log(f"User said: {query}", "info")
+
                 # Step 2: Process with Groq Brain
                 print(f"{Fore.YELLOW}[BRAIN] Thinking...{Style.RESET_ALL}")
                 decision = brain.process_query(query)
@@ -97,13 +102,21 @@ def main_loop(config):
                 print(f"{Fore.MAGENTA}[INTENT] {intent}{Style.RESET_ALL}")
 
                 if intent == "OPEN_APP":
-                    executor.open_app(payload.get("app_name"))
+                    app = payload.get("app_name")
+                    if executor.open_app(app):
+                        logger.log(f"Successfully opened application: {app}", "success")
                 elif intent == "CLOSE_APP":
-                    executor.close_app(payload.get("app_name"))
+                    app = payload.get("app_name")
+                    if executor.close_app(app):
+                        logger.log(f"Closed application: {app}", "info")
                 elif intent == "SYSTEM_CONTROL":
-                    executor.control_system(payload.get("action"))
+                    action = payload.get("action")
+                    if executor.control_system(action):
+                        logger.log(f"System control executed: {action}", "warning")
                 elif intent == "OPEN_URL":
-                    executor.open_url(payload.get("url"))
+                    url = payload.get("url")
+                    if executor.open_url(url):
+                        logger.log(f"Opened URL in browser: {url}", "info")
 
                 # Step 4: Speak Response
                 asyncio.run(voice.speak(spoken_response))
