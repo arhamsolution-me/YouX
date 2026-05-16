@@ -2,8 +2,11 @@ import os
 import asyncio
 import edge_tts
 import speech_recognition as sr
-import pygame
 import time
+
+# Hide pygame welcome message
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
+import pygame
 
 class VoiceService:
     def __init__(self, voice="en-US-AriaNeural"):
@@ -12,7 +15,12 @@ class VoiceService:
         self.recognizer.energy_threshold = 300
         self.recognizer.dynamic_energy_threshold = True
         self.recognizer.pause_threshold = 0.8
-        pygame.mixer.init()
+        try:
+            pygame.mixer.init()
+            self.mixer_available = True
+        except Exception as e:
+            print(f"[VOICE] Warning: Audio mixer could not be initialized: {e}")
+            self.mixer_available = False
         self._setup_done = False
 
     async def speak(self, text: str):
@@ -21,12 +29,18 @@ class VoiceService:
         communicate = edge_tts.Communicate(text, self.voice)
         await communicate.save(output_file)
         
-        pygame.mixer.music.load(output_file)
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            time.sleep(0.1)
-        
-        pygame.mixer.music.unload()
+        if self.mixer_available:
+            try:
+                pygame.mixer.music.load(output_file)
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    time.sleep(0.1)
+                pygame.mixer.music.unload()
+            except Exception as e:
+                print(f"[VOICE] Error playing audio: {e}")
+        else:
+            print("[VOICE] Audio playback skipped (Mixer not available)")
+
         if os.path.exists(output_file):
             os.remove(output_file)
 

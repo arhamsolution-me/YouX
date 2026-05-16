@@ -3,7 +3,7 @@ import subprocess
 import webbrowser
 from urllib.parse import quote
 
-class SystemExecutor:
+class CommandExecutor:
     def __init__(self):
         self.apps = {
             "chrome": "chrome.exe",

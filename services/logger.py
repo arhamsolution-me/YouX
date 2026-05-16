@@ -1,9 +1,9 @@
 import requests
 import json
 
-class CloudLogger:
-    def __init__(self, api_url: str, token: str):
-        self.api_url = f"{api_url}/api/youx/logs"
+class RemoteLogger:
+    def __init__(self, token: str):
+        self.api_url = "http://localhost:3000/api/youx/logs"
         self.token = token
 
     def log(self, message: str, level: str = "info"):
