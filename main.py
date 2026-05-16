@@ -31,28 +31,39 @@ def setup():
     # Check for existing config
     if os.path.exists(".env.json"):
         with open(".env.json", "r") as f:
-            config = json.load(f)
-            return config
+            try:
+                config = json.load(f)
+                return config
+            except:
+                pass
 
-    # Ask for Activation Token
-    token = input(f"{Fore.CYAN}❯ Enter Activation Token from TitanX Dashboard: {Style.RESET_ALL}").strip()
-    
-    # Verify Token with Web API
-    print(f"{Fore.YELLOW}[SETUP] Verifying identity...{Style.RESET_ALL}")
-    try:
-        resp = requests.post(f"{API_BASE_URL}/api/youx/verify", json={"token": token})
-        if resp.status_code == 200:
-            data = resp.json()
-            print(f"{Fore.GREEN}✓ Identity Verified: {data['user']['fullName']} ({data['tenant']['name']}){Style.RESET_ALL}")
-        else:
-            print(f"{Fore.RED}✗ Verification Failed: {resp.json().get('error', 'Unknown error')}{Style.RESET_ALL}")
-            sys.exit(1)
-    except Exception as e:
-        print(f"{Fore.RED}✗ Connection Error: {e}{Style.RESET_ALL}")
-        sys.exit(1)
+    # Loop until verified
+    while True:
+        # Ask for Activation Token
+        token = input(f"{Fore.CYAN}❯ Enter Activation Token from TitanX Dashboard: {Style.RESET_ALL}").strip()
+        
+        # Verify Token with Web API
+        print(f"{Fore.YELLOW}[SETUP] Verifying identity...{Style.RESET_ALL}")
+        try:
+            resp = requests.post(f"{API_BASE_URL}/api/youx/verify", json={"token": token})
+            if resp.status_code == 200:
+                data = resp.json()
+                print(f"{Fore.GREEN}✓ Identity Verified: {data['user']['fullName']} ({data['tenant']['name']}){Style.RESET_ALL}")
+                break
+            else:
+                print(f"{Fore.RED}✗ Invalid Token. Please check your dashboard and try again.{Style.RESET_ALL}")
+        except Exception as e:
+            print(f"{Fore.RED}✗ Connection Error: {e}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Retrying in 5 seconds...{Style.RESET_ALL}")
+            time.sleep(5)
 
     # Ask for Groq API Key
-    groq_key = input(f"{Fore.CYAN}❯ Enter your Groq API Key: {Style.RESET_ALL}").strip()
+    while True:
+        groq_key = input(f"{Fore.CYAN}❯ Enter your Groq API Key: {Style.RESET_ALL}").strip()
+        if groq_key.startswith("gsk_") and len(groq_key) > 20:
+            break
+        else:
+            print(f"{Fore.RED}✗ Invalid Groq Key format. It should start with 'gsk_'.{Style.RESET_ALL}")
     
     config = {
         "token": token,
